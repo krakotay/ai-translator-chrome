@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Translator Settings</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; max-width: 400px; }
+    label { display: block; margin-top: 12px; }
+    input[type="text"], select { width: 100%; padding: 4px; margin-top: 4px; }
+    .section { margin-bottom: 18px; }
+    .switch { display: flex; align-items: center; }
+    .switch input { margin-right: 8px; }
+    button { margin-top: 16px; width: 100%; }
+  </style>
+</head>
+<body>
+  <h2>Translator Settings</h2>
+  <div class="section">
+    <div class="switch">
+      <input type="checkbox" id="cloudMode">
+      <label for="cloudMode">Использовать облачный перевод (OpenRouter)</label>
+    </div>
+  </div>
+  <div class="section" id="cloudSettings" style="display:none;">
+    <label for="apiKey">OpenRouter API-ключ:</label>
+    <input type="text" id="apiKey" placeholder="Введите API-ключ">
+    <label for="modelName">Название модельки:</label>
+    <input type="text" id="modelName" placeholder="например, google/gemma-3-27b-it:free">
+  </div>
+  <button id="saveBtn">Сохранить</button>
+  <div id="status" style="margin-top:10px;color:green;"></div>
+  <script src="options.js"></script>
+</body>
+</html>

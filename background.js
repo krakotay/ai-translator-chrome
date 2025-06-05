@@ -1,4 +1,6 @@
 // background.js
+
+
 console.log('🔄 background service worker started');
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -15,16 +17,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (useCloud) {
       // OpenRouter cloud translation
       const url = 'https://openrouter.ai/api/v1/chat/completions';
+      const escapedText = JSON.stringify(msg.text).slice(1, -1);
+
       const body = JSON.stringify({
         model: settings.openrouterModel,
         messages: [
           {
             role: 'user',
-            content: `Переведи этот текст\n\`\`\`\n${msg.text}\n\`\`\`\nНа русский язык. Текст в MD-блоке.`
+            content: `Переведи этот текст\n\`\`\`\n${escapedText}\n\`\`\`\nНа русский язык как есть. Текст полностью в MD-блоке. return ТОЛЬКО чистый перевод, без комментариев!`
           }
         ],
         max_tokens: 512,
-        temperature: 0.0
+        temperature: 0.1
       });
       fetch(url, {
         method: 'POST',
@@ -62,7 +66,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           }
         ],
         max_tokens: 512,
-        temperature: 0.0
+        temperature: 0.1
       });
       fetch(url, {
         method: 'POST',

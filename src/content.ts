@@ -63,6 +63,11 @@ async function onClickTranslate() {
     return;
   }
 
+  if (!sel || sel.rangeCount === 0) {
+    console.log('No text selected or selection not accessible');
+    return;
+  }
+  
   const range = sel.getRangeAt(0);
   const container = document.createElement('span');
   container.id = 'insert-translated-here';

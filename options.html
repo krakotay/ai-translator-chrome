@@ -14,21 +14,7 @@
   </style>
 </head>
 <body>
-  <h2>Translator Settings</h2>
-  <div class="section">
-    <div class="switch">
-      <input type="checkbox" id="cloudMode">
-      <label for="cloudMode">Использовать облачный перевод (OpenRouter)</label>
-    </div>
-  </div>
-  <div class="section" id="cloudSettings" style="display:none;">
-    <label for="apiKey">OpenRouter API-ключ:</label>
-    <input type="text" id="apiKey" placeholder="Введите API-ключ">
-    <label for="modelName">Название модельки:</label>
-    <input type="text" id="modelName" placeholder="например, google/gemma-3-27b-it:free">
-  </div>
-  <button id="saveBtn">Сохранить</button>
-  <div id="status" style="margin-top:10px;color:green;"></div>
-  <script src="options.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/options.tsx"></script>
 </body>
 </html>

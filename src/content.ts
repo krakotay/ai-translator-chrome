@@ -1,14 +1,11 @@
-// content.js
-console.log("✅ gemma-translator content.js loaded");
+console.log('✅ gemma-translator content.ts loaded');
 
-// Подключаем marked.js
 const script = document.createElement('script');
 script.src = chrome.runtime.getURL('marked.min.js');
 document.head.appendChild(script);
 
-let btn = null;
+let btn: HTMLImageElement | null = null;
 
-// Удалить кнопку, если она уже есть
 function removeButton() {
   if (btn) {
     btn.remove();
@@ -16,8 +13,7 @@ function removeButton() {
   }
 }
 
-// Создать мини-кнопку над выделенным текстом
-function showTranslateButton(x, y) {
+function showTranslateButton(x: number, y: number) {
   removeButton();
 
   btn = document.createElement('img');
@@ -30,34 +26,31 @@ function showTranslateButton(x, y) {
     width: '24px',
     height: '24px',
     cursor: 'pointer',
-    zIndex: 2147483647
-  });
+    zIndex: '2147483647'
+  } as CSSStyleDeclaration);
   document.body.appendChild(btn);
 
   btn.addEventListener('click', onClickTranslate);
 }
 
-// Обработчик клика по кнопке
-// content.js (фрагмент onClickTranslate)
-
 async function onClickTranslate() {
   const sel = window.getSelection();
-  const text = sel.toString().trim();
+  const text = sel?.toString().trim();
   if (!text) { removeButton(); return; }
 
-  // Разбиваем на абзацы по двум и более переводам строки
   const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   if (paragraphs.length < 2) {
-    // Если один абзац — переводим как раньше
     chrome.runtime.sendMessage(
       { type: 'translate-via-gemma', text },
       (response) => {
         if (response?.success) {
           const translated = response.translated;
+          if (!sel) return;
           const range = sel.getRangeAt(0);
           range.deleteContents();
           let html = translated;
-          if (window.marked) html = marked.parse(translated);
+          // @ts-ignore
+          if ((window as any).marked) html = (window as any).marked.parse(translated);
           const frag = range.createContextualFragment(html);
           range.insertNode(frag);
           sel.removeAllRanges();
@@ -70,9 +63,7 @@ async function onClickTranslate() {
     return;
   }
 
-  // Несколько абзацев: переводим по одному, вставляем в контейнер
   const range = sel.getRangeAt(0);
-  // Создаём временный контейнер
   const container = document.createElement('span');
   container.id = 'insert-translated-here';
   range.deleteContents();
@@ -81,14 +72,14 @@ async function onClickTranslate() {
   (async () => {
     for (let i = 0; i < paragraphs.length; ++i) {
       const para = paragraphs[i];
-      // eslint-disable-next-line no-await-in-loop
-      const translated = await new Promise(resolve => {
+      const translated = await new Promise<string>(resolve => {
         chrome.runtime.sendMessage(
           { type: 'translate-via-gemma', text: para },
           (response) => {
             if (response?.success) {
               let html = response.translated;
-              if (window.marked) html = marked.parse(html);
+              // @ts-ignore
+              if ((window as any).marked) html = (window as any).marked.parse(html);
               resolve(html);
             } else {
               resolve('<span style="color:red">Ошибка перевода</span>');
@@ -98,14 +89,12 @@ async function onClickTranslate() {
       });
       const frag = document.createRange().createContextualFragment(translated);
       container.appendChild(frag);
-      // Добавляем разделитель между абзацами, кроме последнего
       if (i < paragraphs.length - 1) {
         container.appendChild(document.createElement('br'));
         container.appendChild(document.createElement('br'));
       }
     }
-    // Разворачиваем контейнер (заменяем контейнер его содержимым)
-    const parent = container.parentNode;
+    const parent = container.parentNode as Node;
     while (container.firstChild) {
       parent.insertBefore(container.firstChild, container);
     }
@@ -115,26 +104,23 @@ async function onClickTranslate() {
   })();
 }
 
-  
-// Слушаем отпускание кнопки мыши
-document.addEventListener('mouseup', (e) => {
+document.addEventListener('mouseup', () => {
   setTimeout(() => {
     const sel = window.getSelection();
-    const text = sel.toString().trim();
+    const text = sel?.toString().trim();
     if (!text) {
       removeButton();
       return;
     }
+    if (!sel) return;
     const range = sel.getRangeAt(0);
     const rect = range.getBoundingClientRect();
-    // Показываем кнопку чуть выше правого края выделения
     showTranslateButton(rect.right + window.scrollX - 12, rect.top + window.scrollY - 28);
   }, 10);
 });
 
-// Убираем кнопку, если кликнули куда-нибудь ещё
 document.addEventListener('mousedown', (e) => {
-  if (btn && !btn.contains(e.target)) {
+  if (btn && !btn.contains(e.target as Node)) {
     removeButton();
   }
 });

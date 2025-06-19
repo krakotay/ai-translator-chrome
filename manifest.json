@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "LM Studio Translator",
-    "version": "1.4.1",
+    "version": "1.5.2",
     "permissions": [
     "storage",
         "scripting"

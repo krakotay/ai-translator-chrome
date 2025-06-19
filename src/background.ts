@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       apiKey = settings.openrouterApiKey;
     }
     // console.log(apiKey, baseURL, settings.openrouterModel, escapedText)
-    const resp = await translateGPT(apiKey, baseURL, settings.openrouterModel || 'gemma-3-12B-it-qat-GGUF', escapedText).catch(err => {
+    const resp = await translateGPT(apiKey, baseURL, settings.openrouterModel || 'gemma-3-12B-it-qat-GGUF', escapedText, msg.fullContext).catch(err => {
       console.error('⚠️ background fetch failed', err);
       sendResponse({ success: false, error: err.message });
     });

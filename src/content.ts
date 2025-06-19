@@ -38,10 +38,10 @@ async function onClickTranslate() {
   const text = sel?.toString().trim();
   if (!text) { removeButton(); return; }
 
-  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  const paragraphs: string[] = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   if (paragraphs.length < 2) {
     chrome.runtime.sendMessage(
-      { type: 'translate-via-gemma', text },
+      { type: 'translate-via-gemma', text, fullContext: text },
       (response) => {
         if (response?.success) {
           const translated = response.translated;
@@ -75,11 +75,12 @@ async function onClickTranslate() {
   range.insertNode(container);
 
   (async () => {
+    const combinedString = paragraphs.join('\n');
     for (let i = 0; i < paragraphs.length; ++i) {
       const para = paragraphs[i];
       const translated = await new Promise<string>(resolve => {
         chrome.runtime.sendMessage(
-          { type: 'translate-via-gemma', text: para },
+          { type: 'translate-via-gemma', text: para, fullContext: combinedString },
           (response) => {
             if (response?.success) {
               let html = response.translated;

@@ -6,14 +6,16 @@ const TranslateEvent = z.object({
     comments: z.string(),
 });
   
-export async function translateGPT(apiKey: string, baseURL: string, model: string, text: string) {
+export async function translateGPT(apiKey: string, baseURL: string, model: string, text: string, fullContext?: string) {
     const openai = new OpenAI({apiKey, baseURL});
-
+    console.log("fc: \n", fullContext ? fullContext : "no context")
 
     const completion = await openai.chat.completions.parse({
       model: model,
       messages: [
-        { role: "system", content: "Переведи текст ниже целиком, как есть." },
+        { role: "system", content: fullContext 
+            ? `Ты переводишь фрагмент текста. Вот полный текст для контекста:\n\n${fullContext}\n\nПереведи следующий фрагмент целиком, как есть.`
+            : "Переведи текст ниже целиком, как есть." },
         { role: "user", content: text + "\n\nНа русский язык" },
       ],
       response_format: zodResponseFormat(TranslateEvent, "event"),

@@ -1,28 +1,56 @@
 import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
-import { z } from "zod";
-const TranslateEvent = z.object({
-    fullTranslate: z.string(),
-    comments: z.string(),
-});
-  
-export async function translateGPT(apiKey: string, baseURL: string, model: string, text: string, fullContext?: string) {
-    const openai = new OpenAI({apiKey, baseURL});
-    console.log("fc: \n", fullContext ? fullContext : "no context")
 
-    const completion = await openai.chat.completions.parse({
-      model: model,
+export async function streamTranslateGPT(
+  apiKey: string,
+  baseURL: string,
+  model: string,
+  text: string,
+  onParagraph: (paragraph: string) => void,
+  onComplete: () => void,
+  onError: (error: Error) => void
+) {
+  const openai = new OpenAI({ apiKey, baseURL });
+
+  try {
+    const stream = await openai.chat.completions.create({
+      model,
       messages: [
-        { role: "system", content: fullContext 
-            ? `Ты переводишь фрагмент текста. Вот полный текст для контекста:\n\n${fullContext}\n\nПереведи следующий фрагмент целиком, как есть.`
-            : "Переведи текст ниже целиком, как есть." },
-        { role: "user", content: text + "\n\nНа русский язык" },
+        { role: "system", content: "Переведи этот текст\n```" },
+        { role: "user", content: text + "\n```\n\nНа русский, без комментариев." },
       ],
-      response_format: zodResponseFormat(TranslateEvent, "event"),
-      temperature: 0.1
+      stream: true,
     });
-    console.log(completion)
-    const translate = completion.choices[0].message.parsed;
-    return translate
+
+    let buffer = "";
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0].delta?.content;
+      if (!delta) continue;
+
+      buffer += delta;
+
+      // пока в буфере есть двойной перенос строки — режем абзацы
+      let delimiterIndex;
+      while ((delimiterIndex = buffer.indexOf("\n\n")) !== -1) {
+        const paragraph = buffer.slice(0, delimiterIndex).trim();
+        if (paragraph) {
+          onParagraph(paragraph + "\n\n");
+        }
+        buffer = buffer.slice(delimiterIndex + 2);
+      }
+    }
+
+    // после завершения стрима, если что-то осталось — шлём это как последний абзац
+    const remaining = buffer.trim();
+    if (remaining) {
+      onParagraph(remaining);
+    }
+
+    onComplete();
+
+  } catch (error) {
+    console.error("Error during OpenAI stream:", error);
+    onError(error as Error);
+  }
 }
 

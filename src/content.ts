@@ -5,6 +5,49 @@ script.src = chrome.runtime.getURL('marked.min.js');
 document.head.appendChild(script);
 
 let btn: HTMLImageElement | null = null;
+let activeTranslationTarget: HTMLElement | null = null;
+let originalSelection: Selection | null = null;
+
+chrome.runtime.onMessage.addListener((msg, _sender, _sendResponse) => {
+  if (!activeTranslationTarget) return;
+
+  switch (msg.type) {
+    case 'translated-paragraph':
+      // @ts-ignore
+      const marked = (window as any).marked;
+      let html = '';
+      if (marked) {
+        html = marked.parse(msg.paragraph);
+      } else {
+        const p = document.createElement('p');
+        p.textContent = msg.paragraph;
+        html = p.outerHTML;
+      }
+      const frag = document.createRange().createContextualFragment(html);
+      activeTranslationTarget.appendChild(frag);
+      break;
+
+    case 'translation-complete':
+      if (activeTranslationTarget.parentElement) {
+        const parent = activeTranslationTarget.parentElement;
+        while (activeTranslationTarget.firstChild) {
+          parent.insertBefore(activeTranslationTarget.firstChild, activeTranslationTarget);
+        }
+        parent.removeChild(activeTranslationTarget);
+      }
+      activeTranslationTarget = null;
+      originalSelection?.removeAllRanges();
+      removeButton();
+      break;
+
+    case 'translation-error':
+      const errorSpan = document.createElement('span');
+      errorSpan.style.color = 'red';
+      errorSpan.textContent = `Ошибка перевода: ${msg.error}`;
+      activeTranslationTarget.appendChild(errorSpan);
+      break;
+  }
+});
 
 function removeButton() {
   if (btn) {
@@ -35,92 +78,44 @@ function showTranslateButton(x: number, y: number) {
 
 async function onClickTranslate() {
   const sel = window.getSelection();
-  const text = sel?.toString().trim();
+  if (!sel || sel.rangeCount === 0) return;
+
+  const text = sel.toString().trim();
   if (!text) { removeButton(); return; }
 
-  const paragraphs: string[] = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
-  if (paragraphs.length < 2) {
-    chrome.runtime.sendMessage(
-      { type: 'translate-via-gemma', text, fullContext: text },
-      (response) => {
-        if (response?.success) {
-          const translated = response.translated;
-          if (!sel) return;
-          const range = sel.getRangeAt(0);
-          range.deleteContents();
-          let html = translated;
-          // @ts-ignore
-          if ((window as any).marked) html = (window as any).marked.parse(translated);
-          const frag = range.createContextualFragment(html);
-          range.insertNode(frag);
-          sel.removeAllRanges();
-        } else {
-          console.error('Ошибка перевода:', response?.error);
-        }
-        removeButton();
-      }
-    );
-    return;
-  }
-
-  if (!sel || sel.rangeCount === 0) {
-    console.log('No text selected or selection not accessible');
-    return;
-  }
-  
-  const range = sel.getRangeAt(0);
+  originalSelection = sel;
+  const range = sel.getRangeAt(0).cloneRange();
   const container = document.createElement('span');
-  container.id = 'insert-translated-here';
+  container.className = 'gemma-translation-container';
+
   range.deleteContents();
   range.insertNode(container);
+  activeTranslationTarget = container;
 
-  (async () => {
-    const combinedString = paragraphs.join('\n');
-    for (let i = 0; i < paragraphs.length; ++i) {
-      const para = paragraphs[i];
-      const translated = await new Promise<string>(resolve => {
-        chrome.runtime.sendMessage(
-          { type: 'translate-via-gemma', text: para, fullContext: combinedString },
-          (response) => {
-            if (response?.success) {
-              let html = response.translated;
-              // @ts-ignore
-              if ((window as any).marked) html = (window as any).marked.parse(html);
-              resolve(html);
-            } else {
-              resolve('<span style="color:red">Ошибка перевода</span>');
-            }
-          }
-        );
-      });
-      const frag = document.createRange().createContextualFragment(translated);
-      container.appendChild(frag);
-      if (i < paragraphs.length - 1) {
-        container.appendChild(document.createElement('br'));
-        container.appendChild(document.createElement('br'));
-      }
-    }
-    const parent = container.parentNode as Node;
-    while (container.firstChild) {
-      parent.insertBefore(container.firstChild, container);
-    }
-    parent.removeChild(container);
-    sel.removeAllRanges();
-    removeButton();
-  })();
+  chrome.runtime.sendMessage({ type: 'translate-via-gemma', text });
+
+  removeButton();
 }
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', (e) => {
+  // Ignore clicks on our own button
+  if (btn && e.target === btn) return;
+
   setTimeout(() => {
     const sel = window.getSelection();
     const text = sel?.toString().trim();
-    if (!text) {
+    if (!text || !sel) {
       removeButton();
       return;
     }
-    if (!sel) return;
     const range = sel.getRangeAt(0);
     const rect = range.getBoundingClientRect();
+    // Do not show button if the selection is inside an input or textarea
+    const activeElement = document.activeElement;
+    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+        removeButton();
+        return;
+    }
     showTranslateButton(rect.right + window.scrollX - 12, rect.top + window.scrollY - 28);
   }, 10);
 });

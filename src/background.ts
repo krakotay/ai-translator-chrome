@@ -1,15 +1,22 @@
 console.log('🔄 background service worker started');
 
-import { translateGPT } from "./openaiTranslator";
+import { streamTranslateGPT } from "./openaiTranslator";
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   console.log('🛰️ background received message', msg);
 
   if (msg.type !== 'translate-via-gemma') {
     return;
   }
 
-  chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel'], async (settings) => {
+  const tabId = sender.tab?.id;
+  if (!tabId) {
+    console.error("Could not get tab ID.");
+    sendResponse({ success: false, error: "Could not get tab ID." });
+    return;
+  }
+
+  chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel'], (settings) => {
     const useCloud = !!settings.cloudMode && settings.openrouterApiKey && settings.openrouterModel;
     var escapedText = JSON.stringify(msg.text).slice(1, -1);
     var apiKey = 'lm-studio';
@@ -19,18 +26,38 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       baseURL = 'https://openrouter.ai/api/v1';
       apiKey = settings.openrouterApiKey;
     }
-    // console.log(apiKey, baseURL, settings.openrouterModel, escapedText)
-    const resp = await translateGPT(apiKey, baseURL, settings.openrouterModel || 'gemma-3-12B-it-qat-GGUF', escapedText, msg.fullContext).catch(err => {
-      console.error('⚠️ background fetch failed', err);
-      sendResponse({ success: false, error: err.message });
-    });
 
-    if (!resp) return `Нет перевода!`;
-    else {
-      const translated = resp.fullTranslate.trim();
-      sendResponse({ success: true, translated });
-    }
-  })
+    const onParagraph = (paragraph: string) => {
+      chrome.tabs.sendMessage(tabId, {
+        type: 'translated-paragraph',
+        paragraph: paragraph,
+      });
+    };
+
+    const onComplete = () => {
+      chrome.tabs.sendMessage(tabId, { type: 'translation-complete' });
+    };
+
+    const onError = (error: Error) => {
+      chrome.tabs.sendMessage(tabId, {
+        type: 'translation-error',
+        error: error.message,
+      });
+    };
+
+    streamTranslateGPT(
+      apiKey,
+      baseURL,
+      settings.openrouterModel || 'gemma-3-12B-it-qat-GGUF',
+      escapedText,
+      onParagraph,
+      onComplete,
+      onError
+    ).catch(err => {
+      console.error('⚠️ background stream initiation failed', err);
+      onError(err);
+    });
+  });
 
   return true;
 });

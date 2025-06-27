@@ -4,8 +4,8 @@ export async function streamTranslateGPT(
   apiKey: string,
   baseURL: string,
   model: string,
-  text: string,
-  onParagraph: (paragraph: string) => void,
+  htmlContent: string, // Изменено с text на htmlContent
+  onParagraph: (paragraph: string) => void, // Теперь будет получать полный HTML
   onComplete: () => void,
   onError: (error: Error) => void
 ) {
@@ -15,8 +15,9 @@ export async function streamTranslateGPT(
     const stream = await openai.chat.completions.create({
       model,
       messages: [
-        { role: "system", content: "Переведи этот текст\n```" },
-        { role: "user", content: text + "\n```\n\nНа русский, без комментариев." },
+        // Обновленный системный промпт для перевода HTML
+        { role: "system", content: "Ты - профессиональный переводчик. Переведи следующий HTML-код на русский язык, сохраняя всю оригинальную HTML-структуру, теги, атрибуты и форматирование. Переводи только текстовое содержимое внутри тегов. Не добавляй никаких комментариев или объяснений, только переведенный HTML." },
+        { role: "user", content: htmlContent + "\n\nНа русский, без комментариев." }, // Передаем HTML-контент напрямую
       ],
       stream: true,
     });
@@ -28,22 +29,11 @@ export async function streamTranslateGPT(
       if (!delta) continue;
 
       buffer += delta;
-
-      // пока в буфере есть двойной перенос строки — режем абзацы
-      let delimiterIndex;
-      while ((delimiterIndex = buffer.indexOf("\n\n")) !== -1) {
-        const paragraph = buffer.slice(0, delimiterIndex).trim();
-        if (paragraph) {
-          onParagraph(paragraph + "\n\n");
-        }
-        buffer = buffer.slice(delimiterIndex + 2);
-      }
     }
 
-    // после завершения стрима, если что-то осталось — шлём это как последний абзац
-    const remaining = buffer.trim();
-    if (remaining) {
-      onParagraph(remaining);
+    // После завершения стрима, шлём весь накопленный HTML как один "абзац"
+    if (buffer.trim()) {
+      onParagraph(buffer);
     }
 
     onComplete();

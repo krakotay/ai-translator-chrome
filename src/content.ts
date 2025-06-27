@@ -7,24 +7,22 @@ document.head.appendChild(script);
 let btn: HTMLImageElement | null = null;
 let activeTranslationTarget: HTMLElement | null = null;
 let originalSelection: Selection | null = null;
+let isFirstTranslatedParagraph: boolean = true;
+let originalElementsToTranslate: HTMLElement[] = [];
+let originalTexts: string[] = [];
+let currentParagraphIndex: number = 0;
 
 chrome.runtime.onMessage.addListener((msg, _sender, _sendResponse) => {
   if (!activeTranslationTarget) return;
 
   switch (msg.type) {
     case 'translated-paragraph':
-      // @ts-ignore
-      const marked = (window as any).marked;
-      let html = '';
-      if (marked) {
-        html = marked.parse(msg.paragraph);
-      } else {
-        const p = document.createElement('p');
-        p.textContent = msg.paragraph;
-        html = p.outerHTML;
+      // msg.paragraph теперь содержит переведенный HTML
+      if (activeTranslationTarget) {
+        activeTranslationTarget.innerHTML = msg.paragraph;
+        // После вставки перевода, убираем желтый фон
+        activeTranslationTarget.style.backgroundColor = '';
       }
-      const frag = document.createRange().createContextualFragment(html);
-      activeTranslationTarget.appendChild(frag);
       break;
 
     case 'translation-complete':
@@ -80,19 +78,33 @@ async function onClickTranslate() {
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
-  const text = sel.toString().trim();
-  if (!text) { removeButton(); return; }
-
   originalSelection = sel;
   const range = sel.getRangeAt(0).cloneRange();
-  const container = document.createElement('span');
+
+  // Извлекаем HTML-содержимое из выделения
+  const extractedContents = range.extractContents();
+  const tempDiv = document.createElement('div');
+  tempDiv.appendChild(extractedContents);
+  const htmlContent = tempDiv.innerHTML; // Это HTML для отправки на перевод
+
+  if (!htmlContent.trim()) { removeButton(); return; } // Проверяем, не пустое ли содержимое
+
+  // Создаем контейнер для перевода (желтая подсветка)
+  const container = document.createElement('div');
   container.className = 'gemma-translation-container';
-
-  range.deleteContents();
+  container.style.backgroundColor = 'yellow';
+  
+  // Вставляем контейнер обратно в документ на место оригинального выделения
   range.insertNode(container);
-  activeTranslationTarget = container;
+  
+  // Устанавливаем innerHTML контейнера в оригинальное HTML-содержимое
+  container.innerHTML = htmlContent; // Отображаем оригинальный HTML с желтым фоном
 
-  chrome.runtime.sendMessage({ type: 'translate-via-gemma', text });
+  activeTranslationTarget = container;
+  isFirstTranslatedParagraph = true; // Сбрасываем флаг для нового перевода
+
+  // Отправляем HTML-содержимое на перевод
+  chrome.runtime.sendMessage({ type: 'translate-via-gemma', text: htmlContent });
 
   removeButton();
 }

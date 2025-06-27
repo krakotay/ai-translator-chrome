@@ -17,7 +17,7 @@ export async function streamTranslateGPT(
       messages: [
         // Обновленный системный промпт для перевода HTML
         { role: "system", content: "Ты - профессиональный переводчик. Переведи следующий HTML-код на русский язык, сохраняя всю оригинальную HTML-структуру, теги, атрибуты и форматирование. Переводи только текстовое содержимое внутри тегов. Не добавляй никаких комментариев или объяснений, только переведенный HTML." },
-        { role: "user", content: htmlContent + "\n\nНа русский, без комментариев." }, // Передаем HTML-контент напрямую
+        { role: "user", content: htmlContent + "\n\nНа русский, без комментариев, оберни в ```html" }, // Передаем HTML-контент напрямую
       ],
       stream: true,
     });
@@ -33,7 +33,7 @@ export async function streamTranslateGPT(
 
     // После завершения стрима, шлём весь накопленный HTML как один "абзац"
     if (buffer.trim()) {
-      onParagraph(buffer);
+      onParagraph(buffer.trim().replace("```html", "").replace("\n```", ""));
     }
 
     onComplete();

@@ -26,15 +26,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, _sendResponse) => {
       break;
 
     case 'translation-complete':
-      if (activeTranslationTarget.parentElement) {
-        const parent = activeTranslationTarget.parentElement;
-        while (activeTranslationTarget.firstChild) {
-          parent.insertBefore(activeTranslationTarget.firstChild, activeTranslationTarget);
-        }
-        parent.removeChild(activeTranslationTarget);
+      // activeTranslationTarget теперь является оригинальным элементом,
+      // поэтому мы не должны его удалять из DOM.
+      // Просто сбрасываем его и убираем кнопку.
+      if (activeTranslationTarget) {
+        // Убедимся, что подсветка убрана, если она еще есть
+        activeTranslationTarget.style.backgroundColor = '';
       }
       activeTranslationTarget = null;
-      originalSelection?.removeAllRanges();
+      originalSelection?.removeAllRanges(); // Сброс выделения
       removeButton();
       break;
 
@@ -74,37 +74,53 @@ function showTranslateButton(x: number, y: number) {
   btn.addEventListener('click', onClickTranslate);
 }
 
+function findClosestBlockElement(node: Node): HTMLElement | null {
+  let current: Node | null = node;
+  while (current && current !== document.body) {
+    if (current.nodeType === Node.ELEMENT_NODE) {
+      const element = current as HTMLElement;
+      const display = window.getComputedStyle(element).display;
+      if (display === 'block' || display === 'flex' || display === 'grid' || display === 'list-item' || display === 'table' || display === 'table-cell' || display === 'table-row') {
+        return element;
+      }
+    }
+    current = current.parentNode;
+  }
+  return null;
+}
+
 async function onClickTranslate() {
   const sel = window.getSelection();
   if (!sel || sel.rangeCount === 0) return;
 
-  originalSelection = sel;
   const range = sel.getRangeAt(0).cloneRange();
-
-  // Извлекаем HTML-содержимое из выделения
-  const extractedContents = range.extractContents();
-  const tempDiv = document.createElement('div');
-  tempDiv.appendChild(extractedContents);
-  const htmlContent = tempDiv.innerHTML; // Это HTML для отправки на перевод
-
-  if (!htmlContent.trim()) { removeButton(); return; } // Проверяем, не пустое ли содержимое
-
-  // Создаем контейнер для перевода (желтая подсветка)
-  const container = document.createElement('div');
-  container.className = 'gemma-translation-container';
-  container.style.backgroundColor = 'yellow';
   
-  // Вставляем контейнер обратно в документ на место оригинального выделения
-  range.insertNode(container);
-  
-  // Устанавливаем innerHTML контейнера в оригинальное HTML-содержимое
-  container.innerHTML = htmlContent; // Отображаем оригинальный HTML с желтым фоном
+  // Находим ближайший блочный элемент, который содержит выделение
+  const targetElement = findClosestBlockElement(range.commonAncestorContainer);
 
-  activeTranslationTarget = container;
+  if (!targetElement) {
+    removeButton();
+    console.warn("No suitable block element found for translation.");
+    return;
+  }
+
+  // Применяем желтую подсветку к оригинальному элементу
+  targetElement.style.backgroundColor = 'yellow';
+  
+  // Получаем HTML-содержимое оригинального элемента для отправки на перевод
+  const htmlContentToSend = targetElement.innerHTML;
+
+  if (!htmlContentToSend.trim()) {
+    targetElement.style.backgroundColor = ''; // Убираем подсветку, если пусто
+    removeButton();
+    return;
+  }
+
+  activeTranslationTarget = targetElement; // Теперь activeTranslationTarget - это оригинальный элемент
   isFirstTranslatedParagraph = true; // Сбрасываем флаг для нового перевода
 
   // Отправляем HTML-содержимое на перевод
-  chrome.runtime.sendMessage({ type: 'translate-via-gemma', text: htmlContent });
+  chrome.runtime.sendMessage({ type: 'translate-via-gemma', text: htmlContentToSend });
 
   removeButton();
 }

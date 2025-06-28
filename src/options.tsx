@@ -6,12 +6,14 @@ const Options = () => {
   const [apiKey, setApiKey] = useState('');
   const [modelName, setModelName] = useState('');
   const [status, setStatus] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState("Ты - профессиональный переводчик. Переведи следующий HTML-код на русский язык, сохраняя всю оригинальную HTML-структуру, теги, атрибуты и форматирование. Переводи только текстовое содержимое внутри тегов. Не добавляй никаких комментариев или объяснений, только переведенный HTML.");
 
   useEffect(() => {
-    chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel'], result => {
+    chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel', 'systemPrompt'], result => {
       setCloudMode(!!result.cloudMode);
       setApiKey(result.openrouterApiKey || '');
       setModelName(result.openrouterModel || '');
+      setSystemPrompt(result.systemPrompt || '');
     });
   }, []);
 
@@ -20,6 +22,7 @@ const Options = () => {
       cloudMode,
       openrouterApiKey: apiKey,
       openrouterModel: modelName,
+      systemPrompt,
     }, () => {
       setStatus('Сохранено!');
       setTimeout(() => setStatus(''), 1200);
@@ -57,6 +60,14 @@ const Options = () => {
             value={modelName}
             onChange={(e) => setModelName(e.target.value)}
             placeholder="например, google/gemma-3-27b-it:free"
+          />
+          <label htmlFor="systemPrompt">Системный промпт:</label>
+          <input
+            type="text"
+            id="systemPrompt"
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            placeholder="Введите системный промпт"
           />
         </div>
       )}

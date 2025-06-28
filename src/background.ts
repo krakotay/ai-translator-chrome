@@ -16,7 +16,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel'], (settings) => {
+  chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel', 'systemPrompt'], (settings) => {
     const useCloud = !!settings.cloudMode && settings.openrouterApiKey && settings.openrouterModel;
     var escapedText = JSON.stringify(msg.text).slice(1, -1);
     var apiKey = 'lm-studio';
@@ -49,6 +49,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       apiKey,
       baseURL,
       settings.openrouterModel || 'gemma-3-12B-it-qat-GGUF',
+      settings.systemPrompt,
       escapedText,
       onParagraph,
       onComplete,

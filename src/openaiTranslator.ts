@@ -4,6 +4,7 @@ export async function streamTranslateGPT(
   apiKey: string,
   baseURL: string,
   model: string,
+  systemPrompt: string,
   htmlContent: string, // Изменено с text на htmlContent
   onParagraph: (paragraph: string) => void, // Теперь будет получать полный HTML
   onComplete: () => void,
@@ -13,10 +14,10 @@ export async function streamTranslateGPT(
 
   try {
     const stream = await openai.chat.completions.create({
-      model,
+      model,  
       messages: [
         // Обновленный системный промпт для перевода HTML
-        { role: "system", content: "Ты - профессиональный переводчик. Переведи следующий HTML-код на русский язык, сохраняя всю оригинальную HTML-структуру, теги, атрибуты и форматирование. Переводи только текстовое содержимое внутри тегов. Не добавляй никаких комментариев или объяснений, только переведенный HTML." },
+        { role: "system", content: systemPrompt },
         { role: "user", content: htmlContent + "\n\nНа русский, без комментариев, оберни в ```html" }, // Передаем HTML-контент напрямую
       ],
       stream: true,

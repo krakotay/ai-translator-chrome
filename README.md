@@ -2,6 +2,8 @@
 
 ---
 
+
+  
 ### 🇬🇧 English
 
 LM Studio Translator is a browser extension that allows you to translate text on web pages using a large language model (LLM). While it supports local models via LM Studio for maximum privacy, it is recommended to use it with [OpenRouter](https://openrouter.ai/) for better performance and a wider selection of models.

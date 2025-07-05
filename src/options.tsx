@@ -67,7 +67,7 @@ const Options = () => {
             id="targetLanguagePrompt"
             value={targetLanguagePrompt}
             onChange={(e) => setTargetLanguagePrompt(e.target.value)}
-            placeholder={targetLanguagePrompt}
+            placeholder='Translate to English/Переведи на русский'
           />
         </div>
       )}

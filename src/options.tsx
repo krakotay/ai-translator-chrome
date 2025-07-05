@@ -6,14 +6,14 @@ const Options = () => {
   const [apiKey, setApiKey] = useState('');
   const [modelName, setModelName] = useState('');
   const [status, setStatus] = useState('');
-  const [systemPrompt, setSystemPrompt] = useState("Ты - профессиональный переводчик. Переведи следующий HTML-код на русский язык, сохраняя всю оригинальную HTML-структуру, теги, атрибуты и форматирование. Переводи только текстовое содержимое внутри тегов. Не добавляй никаких комментариев или объяснений, только переведенный HTML.");
+  const [targetLanguagePrompt, setTargetLanguagePrompt] = useState("Ты - профессиональный переводчик. Переведи следующий HTML-код на русский язык, сохраняя всю оригинальную HTML-структуру, теги, атрибуты и форматирование. Переводи только текстовое содержимое внутри тегов. Не добавляй никаких комментариев или объяснений, только переведенный HTML.");
 
   useEffect(() => {
-    chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel', 'systemPrompt'], result => {
+    chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel', 'targetLanguagePrompt'], result => {
       setCloudMode(!!result.cloudMode);
       setApiKey(result.openrouterApiKey || '');
       setModelName(result.openrouterModel || '');
-      setSystemPrompt(result.systemPrompt || '');
+      setTargetLanguagePrompt(result.targetLanguagePrompt || '');
     });
   }, []);
 
@@ -22,7 +22,7 @@ const Options = () => {
       cloudMode,
       openrouterApiKey: apiKey,
       openrouterModel: modelName,
-      systemPrompt,
+      targetLanguagePrompt,
     }, () => {
       setStatus('Сохранено!');
       setTimeout(() => setStatus(''), 1200);
@@ -61,12 +61,12 @@ const Options = () => {
             onChange={(e) => setModelName(e.target.value)}
             placeholder="например, google/gemma-3-27b-it:free"
           />
-          <label htmlFor="systemPrompt">Системный промпт:</label>
+          <label htmlFor="targetLanguagePrompt">Системный промпт:</label>
           <input
             type="text"
-            id="systemPrompt"
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
+            id="targetLanguagePrompt"
+            value={targetLanguagePrompt}
+            onChange={(e) => setTargetLanguagePrompt(e.target.value)}
             placeholder="Введите системный промпт"
           />
         </div>

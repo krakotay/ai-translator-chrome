@@ -1,47 +1,43 @@
 import OpenAI from "openai";
 
-export async function streamTranslateGPT(
+/**
+ * Перевод склеенного текста (строки разделены ␟) одной LLM-запросом
+ * и раздача результата порциями через коллбэки.
+ */
+export async function translateJoined(
   apiKey: string,
   baseURL: string,
   model: string,
-  systemPrompt: string,
-  htmlContent: string, // Изменено с text на htmlContent
-  onParagraph: (paragraph: string) => void, // Теперь будет получать полный HTML
+  joined: string,                 // строки склеены ␟
+  delim: string,
+  targetLanguagePrompt: string,
+  onChunk: (idx: number, text: string) => void,
   onComplete: () => void,
-  onError: (error: Error) => void
+  onError: (err: Error) => void
 ) {
   const openai = new OpenAI({ apiKey, baseURL });
 
+  const systemPrompt = `
+Ты – Chrome-переводчик. Получишь текст, где строки
+разделены символом ${delim} (U+241F). Верни перевод в
+точно таком же формате, без комментариев и кода.
+  `.trim();
+
   try {
-    const stream = await openai.chat.completions.create({
-      model,  
+    const { choices } = await openai.chat.completions.create({
+      model,
+      stream: false,
       messages: [
-        // Обновленный системный промпт для перевода HTML
         { role: "system", content: systemPrompt },
-        { role: "user", content: htmlContent + "\n\nНа русский, без комментариев, оберни в ```html" }, // Передаем HTML-контент напрямую
+        { role: "user",   content: '```\n' + joined + "\n```\n\n" + targetLanguagePrompt },
       ],
-      stream: true,
     });
 
-    let buffer = "";
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0].delta?.content;
-      if (!delta) continue;
-
-      buffer += delta;
-    }
-
-    // После завершения стрима, шлём весь накопленный HTML как один "абзац"
-    if (buffer.trim()) {
-      onParagraph(buffer.trim().replace("```html", "").replace("\n```", ""));
-    }
-
+    const translated = choices[0].message.content!.trim().replaceAll('```', '');
+    console.log('✅ translated', translated);
+    translated.split(delim).forEach((t, idx) => onChunk(idx, t));
     onComplete();
-
-  } catch (error) {
-    console.error("Error during OpenAI stream:", error);
-    onError(error as Error);
+  } catch (e) {
+    onError(e as Error);
   }
 }
-

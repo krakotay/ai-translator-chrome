@@ -1,64 +1,57 @@
+'use strict';
 console.log('🔄 background service worker started');
 
-import { streamTranslateGPT } from "./openaiTranslator";
+import { translateJoined } from "./openaiTranslator";
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  console.log('🛰️ background received message', msg);
+  if (msg.type !== "translate-via-gemma") return;
 
-  if (msg.type !== 'translate-via-gemma') {
-    return;
-  }
-
+  const { texts } = msg as { texts: string[] };
   const tabId = sender.tab?.id;
-  if (!tabId) {
-    console.error("Could not get tab ID.");
-    sendResponse({ success: false, error: "Could not get tab ID." });
-    return;
-  }
+  if (!tabId) return sendResponse({ ok: false, error: 'no-tab' });
 
-  chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel', 'systemPrompt'], (settings) => {
-    const useCloud = !!settings.cloudMode && settings.openrouterApiKey && settings.openrouterModel;
-    var escapedText = JSON.stringify(msg.text).slice(1, -1);
-    var apiKey = 'lm-studio';
-    var baseURL = 'http://localhost:7860/v1/chat/completions';
+  // настроечки из storage
+  chrome.storage.local.get(
+    ['cloudMode', 'openrouterApiKey', 'openrouterModel', 'targetLanguagePrompt'],
+    (settings) => {
+      const useCloud = !!settings.cloudMode && settings.openrouterApiKey && settings.openrouterModel;
+      const apiKey = useCloud ? settings.openrouterApiKey : 'lm-studio';
+      const baseURL = useCloud ? 'https://openrouter.ai/api/v1'
+        : 'http://localhost:7860/v1/chat/completions';
+      const model = useCloud ? settings.openrouterModel
+        : 'gemma-3-12B-it-qat-GGUF';
+      const targetLanguagePrompt = settings.targetLanguagePrompt || 'Переведи на русский';
 
-    if (useCloud) {
-      baseURL = 'https://openrouter.ai/api/v1';
-      apiKey = settings.openrouterApiKey;
+      /* ---------- перевод ---------- */
+      const DELIM = '␟';                         // U+241F
+      const joined = texts.join(DELIM);
+
+      translateJoined(
+        apiKey,
+        baseURL,
+        model,
+        joined,
+        DELIM,
+        targetLanguagePrompt,
+        /* onChunk */(idx, line) => {
+          chrome.tabs.sendMessage(tabId, {
+            type: 'translated-chunk',
+            idx,
+            text: line,
+          });
+        },
+        /* onComplete */() => {
+          chrome.tabs.sendMessage(tabId, { type: 'translation-complete' });
+        },
+        /* onError   */(err) => {
+          chrome.tabs.sendMessage(tabId, {
+            type: 'translation-error',
+            error: err.message,
+          });
+        }
+      );
     }
+  );
 
-    const onParagraph = (paragraph: string) => {
-      chrome.tabs.sendMessage(tabId, {
-        type: 'translated-paragraph',
-        paragraph: paragraph,
-      });
-    };
-
-    const onComplete = () => {
-      chrome.tabs.sendMessage(tabId, { type: 'translation-complete' });
-    };
-
-    const onError = (error: Error) => {
-      chrome.tabs.sendMessage(tabId, {
-        type: 'translation-error',
-        error: error.message,
-      });
-    };
-
-    streamTranslateGPT(
-      apiKey,
-      baseURL,
-      settings.openrouterModel || 'gemma-3-12B-it-qat-GGUF',
-      settings.systemPrompt,
-      escapedText,
-      onParagraph,
-      onComplete,
-      onError
-    ).catch(err => {
-      console.error('⚠️ background stream initiation failed', err);
-      onError(err);
-    });
-  });
-
-  return true;
+  return true; // keep the message channel open (async)
 });

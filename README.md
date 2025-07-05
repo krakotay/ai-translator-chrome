@@ -1,6 +1,10 @@
-# LM Studio Translator
+# LLM Chromium Translator
 
 ---
+A simple demonstration, spanish to russian
+
+![image](https://github.com/user-attachments/assets/40d4dd3d-1d5c-4ab1-8a44-c47308dfc47a)
+![image](https://github.com/user-attachments/assets/d7b47dd2-9c7e-4892-ab3c-603c4ae08866)
 
 
   

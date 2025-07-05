@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "LM Studio Translator",
+    "name": "AI Translator",
     "version": "1.8.0",
     "permissions": [
     "storage",

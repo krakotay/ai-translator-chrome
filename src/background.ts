@@ -4,7 +4,7 @@ console.log('🔄 background service worker started');
 import { translateJoined } from "./openaiTranslator";
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type !== "translate-via-gemma") return;
+  if (msg.type !== "translate-via-ai") return;
 
   const { texts } = msg as { texts: string[] };
   const tabId = sender.tab?.id;

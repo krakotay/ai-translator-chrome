@@ -104,7 +104,7 @@ async function onTranslateClick() {
 
   // 4.3 Отправляем массив строк
   chrome.runtime.sendMessage({
-    type: "translate-via-gemma",
+    type: "translate-via-ai",
     texts: payload,
   });
 

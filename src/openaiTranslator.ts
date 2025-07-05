@@ -18,9 +18,9 @@ export async function translateJoined(
   const openai = new OpenAI({ apiKey, baseURL });
 
   const systemPrompt = `
-Ты – Chrome-переводчик. Получишь текст, где строки
-разделены символом ${delim} (U+241F). Верни перевод в
-точно таком же формате, без комментариев и кода.
+You are a Chrome translator. You will receive text where lines
+are separated by the ${delim} symbol (U+241F). Return the translation in
+exactly the same format, without comments and code.
   `.trim();
 
   try {

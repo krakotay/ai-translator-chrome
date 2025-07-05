@@ -6,7 +6,7 @@ const Options = () => {
   const [apiKey, setApiKey] = useState('');
   const [modelName, setModelName] = useState('');
   const [status, setStatus] = useState('');
-  const [targetLanguagePrompt, setTargetLanguagePrompt] = useState("Ты - профессиональный переводчик. Переведи следующий HTML-код на русский язык, сохраняя всю оригинальную HTML-структуру, теги, атрибуты и форматирование. Переводи только текстовое содержимое внутри тегов. Не добавляй никаких комментариев или объяснений, только переведенный HTML.");
+  const [targetLanguagePrompt, setTargetLanguagePrompt] = useState("Переведи на русский");
 
   useEffect(() => {
     chrome.storage.local.get(['cloudMode', 'openrouterApiKey', 'openrouterModel', 'targetLanguagePrompt'], result => {
@@ -24,7 +24,7 @@ const Options = () => {
       openrouterModel: modelName,
       targetLanguagePrompt,
     }, () => {
-      setStatus('Сохранено!');
+      setStatus('Saved!');
       setTimeout(() => setStatus(''), 1200);
     });
   };
@@ -40,38 +40,38 @@ const Options = () => {
             checked={cloudMode}
             onChange={(e) => setCloudMode(e.target.checked)}
           />
-          <label htmlFor="cloudMode">Использовать облачный перевод (OpenRouter)</label>
+          <label htmlFor="cloudMode">Use OpenRouter</label>
         </div>
       </div>
       {cloudMode && (
         <div className="section" id="cloudSettings">
-          <label htmlFor="apiKey">OpenRouter API-ключ:</label>
+          <label htmlFor="apiKey">OpenRouter API-key:</label>
           <input
             type="text"
             id="apiKey"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Введите API-ключ"
+            placeholder="Enter API-key"
           />
-          <label htmlFor="modelName">Название модельки:</label>
+          <label htmlFor="modelName">Model name:</label>
           <input
             type="text"
             id="modelName"
             value={modelName}
             onChange={(e) => setModelName(e.target.value)}
-            placeholder="например, google/gemma-3-27b-it:free"
+            placeholder="google/gemini-2.5-flash-lite-preview-06-17"
           />
-          <label htmlFor="targetLanguagePrompt">Системный промпт:</label>
+          <label htmlFor="targetLanguagePrompt">System prompt:</label>
           <input
             type="text"
             id="targetLanguagePrompt"
             value={targetLanguagePrompt}
             onChange={(e) => setTargetLanguagePrompt(e.target.value)}
-            placeholder="Введите системный промпт"
+            placeholder="Enter system prompt"
           />
         </div>
       )}
-      <button id="saveBtn" onClick={save}>Сохранить</button>
+      <button id="saveBtn" onClick={save}>Save</button>
       <div id="status" style={{marginTop:10,color:'green'}}>{status}</div>
     </div>
   );

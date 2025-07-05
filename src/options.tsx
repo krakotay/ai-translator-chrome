@@ -61,13 +61,13 @@ const Options = () => {
             onChange={(e) => setModelName(e.target.value)}
             placeholder="google/gemini-2.5-flash-lite-preview-06-17"
           />
-          <label htmlFor="targetLanguagePrompt">System prompt:</label>
+          <label htmlFor="targetLanguagePrompt">Target language prompt:</label>
           <input
             type="text"
             id="targetLanguagePrompt"
             value={targetLanguagePrompt}
             onChange={(e) => setTargetLanguagePrompt(e.target.value)}
-            placeholder="Enter system prompt"
+            placeholder={targetLanguagePrompt}
           />
         </div>
       )}

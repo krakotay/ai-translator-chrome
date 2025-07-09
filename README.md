@@ -24,8 +24,9 @@ LM Studio Translator is a browser extension that allows you to translate text on
 **Recommended: From Release**
 
 1.  Go to the [Releases](https://github.com/krakotay/my-translator/releases) page.
-2.  Download the latest `.crx` file.
-3.  Open Chrome, navigate to `chrome://extensions/`, and drag the downloaded file into the window to load the extension.
+2.  Download the latest `.7z` file, unpack it
+3.  Open Chrome, navigate to `chrome://extensions/`, enable developer mode and Load unpacked.
+![image](https://github.com/user-attachments/assets/c7644ede-63cd-4d64-b74d-a48207694a44)
 
 **From Source**
 
@@ -38,18 +39,12 @@ LM Studio Translator is a browser extension that allows you to translate text on
 
 The extension can be configured to work with different backends.
 
-**Recommended: OpenRouter**
+**OpenRouter**
 
 1.  Get your API key from [OpenRouter](https://openrouter.ai/).
 2.  Open the extension's options page.
 3.  Enable OpenRouter and enter your API key.
 4.  Set the model name. The author's choice is `google/gemini-2.5-flash-lite-preview-06-17`.
-
-**Alternative: LM Studio**
-
-1.  Make sure you have [LM Studio](https://lmstudio.ai/) installed and running.
-2.  Load a model of your choice and start the local server.
-3.  Open the extension's options page and set the correct API address (e.g., `http://localhost:1234/v1`) and model name.
 
 ---
 
@@ -69,8 +64,9 @@ LM Studio Translator — это браузерное расширение для
 **Рекомендуемый способ: Из релиза**
 
 1.  Перейдите на страницу [Релизы](https://github.com/krakotay/my-translator/releases).
-2.  Скачайте последний `.crx` файл.
-3.  Откройте Chrome, перейдите на страницу `chrome://extensions/` и загрузите расширение.
+2.  Скачайте последний `.7z` file, распакуйте
+3.  В Chrome перейдите по `chrome://extensions/`, включие режим разработки и загрузите всю папку.
+![image](https://github.com/user-attachments/assets/c7644ede-63cd-4d64-b74d-a48207694a44)
 
 **Из исходного кода**
 
@@ -83,15 +79,9 @@ LM Studio Translator — это браузерное расширение для
 
 Расширение можно настроить для работы с разными бэкендами.
 
-**Рекомендуемый способ: OpenRouter**
+**OpenRouter**
 
 1.  Получите ваш API-ключ на [OpenRouter](https://openrouter.ai/).
 2.  Откройте страницу настроек расширения.
 3.  Включите OpenRouter в Options/Настройках и введите ваш API-ключ.
 4.  Укажите имя модели. Выбор автора: `google/gemini-2.5-flash-lite-preview-06-17`.
-
-**Альтернатива: LM Studio**
-
-1.  Убедитесь, что у вас установлен и запущен [LM Studio](https://lmstudio.ai/).
-2.  Загрузите нужную модель и запустите локальный сервер.
-3.  Откройте страницу настроек расширения и укажите правильный адрес API (например, `http://localhost:1234/v1`) и название модели.

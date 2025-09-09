@@ -44,7 +44,7 @@ The extension can be configured to work with different backends.
 1.  Get your API key from [OpenRouter](https://openrouter.ai/).
 2.  Open the extension's options page.
 3.  Enable OpenRouter and enter your API key.
-4.  Set the model name. The author's choice is `google/gemini-2.5-flash-lite-preview-06-17`.
+4.  Set the model name. The author's choice is `google/gemini-2.5-flash-lite`.
 
 ---
 
@@ -84,4 +84,4 @@ LM Studio Translator — это браузерное расширение для
 1.  Получите ваш API-ключ на [OpenRouter](https://openrouter.ai/).
 2.  Откройте страницу настроек расширения.
 3.  Включите OpenRouter в Options/Настройках и введите ваш API-ключ.
-4.  Укажите имя модели. Выбор автора: `google/gemini-2.5-flash-lite-preview-06-17`.
+4.  Укажите имя модели. Выбор автора: `google/gemini-2.5-flash-lite`.

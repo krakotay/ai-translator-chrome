@@ -1,6 +1,6 @@
 {
   "name": "ai-translator",
-  "version": "1.10.0",
+  "version": "1.10.2",
   "description": "",
   "main": "background.js",
   "scripts": {

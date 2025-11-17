@@ -11,6 +11,8 @@ let activeBlock: HTMLElement | null = null;      // выбранный блоч�
 let textInfos: {
   node: Text;
   original: string;
+  leadingSpace?: boolean;
+  trailingSpace?: boolean;
 }[] = [];                                        // карта индексов → Text-ноды
 
 /******************** 2. Утилиты ********************/
@@ -18,7 +20,7 @@ const DELIM = "␟";                               // должен совпад�
 
 // Проходит по всему поддереву и собирает видимые Text-ноды
 function collectVisibleTextNodes(root: Node) {
-  const out: { node: Text; original: string }[] = [];
+  const out: { node: Text; original: string; leadingSpace?: boolean; trailingSpace?: boolean }[] = [];
   const walker = document.createTreeWalker(
     root,
     NodeFilter.SHOW_TEXT,
@@ -54,8 +56,11 @@ function collectVisibleTextNodes(root: Node) {
 
   while (walker.nextNode()) {
     const n = walker.currentNode as Text;
-    const normalized = (n.nodeValue || "").replace(/\s+/g, " ");
-    out.push({ node: n, original: normalized });
+    const raw = n.nodeValue || "";
+    const leadingSpace = /^\s/.test(raw);
+    const trailingSpace = /\s$/.test(raw);
+    const normalized = raw.replace(/\s+/g, " ").trim();
+    out.push({ node: n, original: normalized, leadingSpace, trailingSpace });
   }
   return out;
 }
@@ -136,7 +141,13 @@ chrome.runtime.onMessage.addListener((msg) => {
     case "translated-chunk": {
       const { idx, text } = msg as { idx: number; text: string };
       if (textInfos[idx]) {
-        textInfos[idx].node.nodeValue = text;
+        const info = textInfos[idx];
+        // Нормализуем внутренние пробелы/переносы, чтобы модель не разрывала твиты на лишние строки
+        const core = text.replace(/\s+/g, " ").trim();
+        let final = core;
+        if (info.leadingSpace) final = " " + final;
+        if (info.trailingSpace) final = final + " ";
+        info.node.nodeValue = final;
       } else if (idx > 0 && textInfos.length > 0) {
         const last = textInfos[textInfos.length - 1];
         const prev = last.node.nodeValue || "";

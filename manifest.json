@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "AI Translator",
-    "version": "1.10.0",
+    "version": "1.10.2",
     "permissions": [
     "storage",
         "scripting"

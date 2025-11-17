@@ -23,15 +23,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       const targetLanguagePrompt = settings.targetLanguagePrompt || 'Переведи на русский';
 
       /* ---------- перевод ---------- */
-      const DELIM = '␟';                         // U+241F
-      const joined = texts.join(DELIM);
+      const joined = texts.join("\n");          // одна строка = один фрагмент
 
       translateJoined(
         apiKey,
         baseURL,
         model,
         joined,
-        DELIM,
+        "\n", // формальный параметр delim, фактически используем разделение по строкам
         targetLanguagePrompt,
         /* onChunk */(idx, line) => {
           chrome.tabs.sendMessage(tabId, {

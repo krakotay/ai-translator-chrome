@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+'use strict';
 import ReactDOM from 'react-dom/client';
 
 const Popup = () => {

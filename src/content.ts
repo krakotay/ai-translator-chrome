@@ -1,4 +1,5 @@
 // content.ts — узловой перевод ✓2025-07-05
+'use strict';
 console.log('✅ gemma-translator content.ts loaded');
 const script = document.createElement('script');
 script.src = chrome.runtime.getURL('marked.min.js');
@@ -23,14 +24,29 @@ function collectVisibleTextNodes(root: Node) {
     NodeFilter.SHOW_TEXT,
     {
       acceptNode(node) {
-        if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+        const raw = node.nodeValue;
+        if (!raw) return NodeFilter.FILTER_REJECT;
+
+        const normalized = raw.replace(/\s+/g, " ").trim();
+        if (!normalized) return NodeFilter.FILTER_REJECT;
 
         const el = node.parentElement as HTMLElement | null;
         if (!el) return NodeFilter.FILTER_REJECT;
+
+        const tag = el.tagName;
+        if (["SCRIPT", "STYLE", "NOSCRIPT", "CODE", "PRE", "KBD", "SAMP"].includes(tag)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
         const cs = getComputedStyle(el);
         if (cs.display === "none" || cs.visibility === "hidden") {
           return NodeFilter.FILTER_REJECT;
         }
+
+        if (normalized.length <= 1 && /[.,:;!?]/.test(normalized)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
         return NodeFilter.FILTER_ACCEPT;
       },
     }
@@ -38,7 +54,8 @@ function collectVisibleTextNodes(root: Node) {
 
   while (walker.nextNode()) {
     const n = walker.currentNode as Text;
-    out.push({ node: n, original: n.nodeValue! });
+    const normalized = (n.nodeValue || "").replace(/\s+/g, " ");
+    out.push({ node: n, original: normalized });
   }
   return out;
 }
@@ -118,7 +135,13 @@ chrome.runtime.onMessage.addListener((msg) => {
   switch (msg.type) {
     case "translated-chunk": {
       const { idx, text } = msg as { idx: number; text: string };
-      if (textInfos[idx]) textInfos[idx].node.nodeValue = text;
+      if (textInfos[idx]) {
+        textInfos[idx].node.nodeValue = text;
+      } else if (idx > 0 && textInfos.length > 0) {
+        const last = textInfos[textInfos.length - 1];
+        const prev = last.node.nodeValue || "";
+        last.node.nodeValue = prev ? `${prev}\n\n${text}` : text;
+      }
       break;
     }
     case "translation-complete": {
